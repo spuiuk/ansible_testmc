@@ -1,0 +1,65 @@
+---
+- name: Check for required variables
+  fail:
+    msg: "Please provide three required variables: gluster_command_node, gluster_nodes, gluster_volume_type"
+  when: gluster_command_node is undefined or gluster_nodes is undefined or gluster_volume_type is undefined
+
+- name: Install gluster repo
+  yum:
+    name:
+      - centos-release-gluster41
+    state: present
+
+- name: Install gluster server
+  yum:
+    name:
+      - glusterfs-server
+    state: present
+
+- name: Install gluster devel packages
+  yum:
+    name:
+      - glusterfs-api-devel
+      - glusterfs-devel
+    state: present
+
+- name: Install samba glusterfs vfs plugin
+  yum:
+    name:
+      - samba-vfs-glusterfs
+    state: present
+
+- name: Enable firewall rules for gluster
+  firewalld: service=glusterfs permanent=yes state=enabled
+
+- name: Create a new partition on secondary disk
+  parted: device=/dev/vdb number=1 state=present
+
+- name: Create a filesystem on this partition /dev/vdb1
+  filesystem: fstype=xfs dev=/dev/vdb1
+
+- name: Create mount point
+  file: path=/rhgs state=directory mode=0777
+
+- name: Mount brick filesystem and add to fstab
+  mount: path=/rhgs/ src=/dev/vdb1 fstype=xfs state=mounted
+
+- name: Create the brick folder on brick filesystem
+  file: path=/rhgs/brick1 state=directory mode=0777
+
+- name: Modify glusterd.vol to allow Samba to communicate with gluster on insecure ports
+  lineinfile:
+    path: /etc/glusterfs/glusterd.vol
+    insertbefore: "^end-volume"
+    line: "option rpc-auth-allow-insecure on"
+    state: present
+
+- name: Ensure glusterd service is enabled
+  service: name=glusterd state=started enabled=yes
+
+- name: Create a file indicated gluster system has been installed
+  file: path=/tmp/installed_{{ inventory_hostname_short }} state=touch
+  connection: local
+
+- include_tasks: "create_volume.yml"
+  when: inventory_hostname_short == gluster_command_node

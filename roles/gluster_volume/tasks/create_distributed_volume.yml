@@ -1,0 +1,13 @@
+---
+- name: Create gluster volume
+  gluster_volume:
+    state: present
+    name: gv0
+    bricks: /rhgs/brick1
+    cluster: "{{ gluster_nodes }}"
+    options:
+      { server.allow-insecure: 'on',
+        performance.cache-samba-metadata: 'on',
+        storage.batch-fsync-delay-usec: '0'
+      }
+  run_once: yes

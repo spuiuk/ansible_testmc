@@ -1,0 +1,16 @@
+---
+- block:
+    - name: Wait for all nodes to come up
+      wait_for:
+          path: "/tmp/installed_{{ item }}"
+      with_items: "{{ gluster_nodes }}"
+      connection: local
+
+    - include_tasks: "create_{{ gluster_volume_type }}_volume.yml"
+
+    - name: Remove tmp files
+      file:
+        path: "/tmp/installed_{{ item }}"
+        state: absent
+      with_items: "{{ gluster_nodes }}"
+      connection: local
