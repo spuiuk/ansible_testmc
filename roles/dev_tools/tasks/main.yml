@@ -1,0 +1,15 @@
+---
+- name: Install dev tools
+  yum:
+    name:
+      - git
+      - gdb
+      - gcc
+      - python
+      - perl
+      - automake
+      - autoconf
+      - libtool
+      - flex
+      - bison
+    state: present

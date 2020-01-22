@@ -1,0 +1,39 @@
+---
+- name: Install samba
+  yum: name=samba state=present
+
+- name: Enable firewall for samba
+  firewalld:
+    service: samba
+    permanent: yes
+    state: enabled
+
+- name: Create test users
+  user:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - test1
+    - test2
+
+- name: Create test users with smbpasswd
+  shell: (echo {{ item.password }}; echo {{ item.password }})|smbpasswd -a {{ item.username }}
+  with_items:
+    - { username: 'test1', password: 'x' }
+    - { username: 'test2', password: 'x' }
+
+- name: Create folder for export
+  file:
+    path: /test
+    state: directory
+    owner: root
+    group: root
+    mode: 0777
+
+- name: Copy over smb.conf
+  copy:
+    src: smb.conf
+    dest: /etc/samba/smb.conf
+    owner: root
+    group: root
+    mode: 0644

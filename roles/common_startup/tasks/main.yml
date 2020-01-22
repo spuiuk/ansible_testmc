@@ -1,0 +1,74 @@
+---
+- name: Update all packages
+  yum: name='*' state=latest
+
+- name: Install ntp
+  yum: name=ntp state=present
+
+- name: Ensure ntp is running
+  service: name=ntpd state=started enabled=yes
+
+- name: Install management tools
+  yum:
+    name:
+      - sudo
+      - iputils
+      - vim
+      - autofs
+      - net-tools
+    state: present
+
+- name: Install filesystem tools
+  yum:
+    name:
+      - cifs-utils
+      - nfs-utils
+    state: present
+
+- name: Allow all users to sudo
+  lineinfile:
+    path: /etc/sudoers
+    state: present
+    insertafter: EOF
+    line: 'ALL ALL=(ALL) NOPASSWD: ALL'
+
+- name: Create /root/.ssh
+  file:
+    path: /root/.ssh
+    owner: root
+    group: root
+    mode: 0700
+    state: directory
+
+- name: Copy authorized_keys to /root/.ssh
+  copy:
+    src: authorized_keys
+    dest: /root/.ssh/authorized_keys
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Create user sprabhu
+  user: name=sprabhu state=present
+
+- name: Create /home/sprabhu/.ssh/
+  file:
+    path: /home/sprabhu/.ssh
+    owner: sprabhu
+    group: sprabhu
+    mode: 0700
+    state: directory
+
+- name: Copy authorized_keys to /home/sprabhu/.ssh
+  copy:
+    src: authorized_keys
+    dest: /home/sprabhu/.ssh/authorized_keys
+    owner: sprabhu
+    group: sprabhu
+    mode: 0600
+
+-  name: Clear UUID from network interface
+   lineinfile:
+     path: /etc/sysconfig/network-scripts/ifcfg-eth0
+     regexp: '^UUID='
+     state: absent
