@@ -1,0 +1,17 @@
+---
+- name: Change password policy to accept simple passwords
+  win_security_policy:
+    section: System Access
+    key: PasswordComplexity
+    value: 0
+
+- name: Create users test1 and test2 with password x
+  win_user:
+    name: '{{ item.name }}'
+    password: 'x'
+    groups: Users
+    update_password: on_create
+    password_never_expires: yes
+  with_items:
+    - name: test1
+    - name: test2

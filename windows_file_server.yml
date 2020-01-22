@@ -1,0 +1,7 @@
+---
+
+- name: Setup a test windows file server
+  hosts: all
+
+  roles:
+    - windows_fileserver

@@ -1,0 +1,21 @@
+---
+- name: Create folder c:\test
+  win_file:
+    path: c:\test
+    state: directory
+
+- name: Set world writable permissions for c:\test
+  win_acl:
+    path: c:\test
+    user: Users
+    rights: FullControl
+    type: allow
+
+- name: Share folder c:\test
+  #win_shell: net share test=c:\test /grant:everyone,FULL
+  win_share:
+    name: test
+    description: Test share
+    path: c:\test
+    full: everyone
+
