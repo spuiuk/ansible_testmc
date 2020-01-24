@@ -1,0 +1,45 @@
+---
+- name: Check for required variables
+  fail:
+    msg: "Please provide variables: windows_ad_name"
+  when: windows_ad_name is undefined
+
+- name: Install AD services
+  win_feature:
+    name: AD-Domain-Services
+    include_management_tools: yes
+    include_sub_features: yes
+    state: present
+
+- name: Install Domain
+  win_domain:
+    dns_domain_name='{{ windows_ad_name }}.vagrant'
+    safe_mode_password='Use4Str0ngPassw0rd'
+    domain_netbios_name={{ windows_ad_name }}
+  register: ad
+
+- name: Reboot Machine
+  win_reboot:
+    msg: "Installed AD. Rebooting"
+    pre_reboot_delay: 10
+    post_reboot_delay: 60
+    test_command: 'Get-ADDomain'
+  when: ad.changed
+
+- name: Switching off Domain password complexity
+  win_shell: "Set-ADDefaultDomainPasswordPolicy -identity vm145-ad -ComplexityEnabled $false -MinPasswordLength 0"
+
+- name: Add Domain users
+  win_domain_user:
+    name: '{{ item }}'
+    password: 'x'
+    state: present
+  with_items:
+    - testad1
+    - testas2
+
+- name: Add Domain admin user
+  win_domain_user:
+    name: adminad
+    password: x
+    state: present
