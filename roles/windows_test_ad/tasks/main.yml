@@ -36,7 +36,7 @@
     state: present
   with_items:
     - testad1
-    - testas2
+    - testad2
 
 - name: Add Domain admin user
   win_domain_user:
