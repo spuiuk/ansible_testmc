@@ -1,0 +1,14 @@
+---
+- hosts: all
+  vars:
+    windows_ad_name: vm145-ad
+    windows_ad_hostname: vm145-76
+  become: yes
+  roles:
+    - common_startup
+    - dev_tools
+    - samba_add_ad
+  tasks:
+    - name: Disable selinux
+      selinux:
+        state: disabled

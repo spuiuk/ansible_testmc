@@ -1,0 +1,79 @@
+---
+- name: Check for required variables
+  fail:
+    msg: "Please provide variables: windows_ad_name and windows_ad_hostname"
+  when: windows_ad_name is undefined or windows_ad_hostname is undefined
+
+- name: Install required packages
+  yum:
+    name:
+      - krb5-workstation
+      - samba-winbind
+      - samba-winbind-modules
+      - samba-winbind-clients
+
+- name: Add krb5.conf
+  template:
+    src: krb5.conf
+    dest: /etc/krb5.conf.d/vm145-ad.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Add samba include file
+  template:
+    src: smb_ad.conf
+    dest: /etc/samba/smb_ad.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: modify /etc/samba/smb.conf
+  lineinfile:
+    path: /etc/samba/smb.conf
+    regexp: ^include = /etc/samba/smb_ad.conf
+    insertafter: '^\[global\]'
+    state: present
+    line: 'include = /etc/samba/smb_ad.conf'
+
+- name: Join Domain
+  shell: (echo x|net ads join --no-dns-updates -U adminad)
+
+- name: Restart winbindd
+  service: name=winbind state=restarted enabled=yes
+
+- name: Restart smbd
+  service: name=smb state=restarted
+
+- name: Test AD join
+  command: 'net ads testjoin'
+  register: ads_join_output
+  failed_when: "'OK' not in ads_join_output.stdout"
+
+- name: modify /etc/nsswitch.conf to modify passwd line
+  lineinfile:
+    path: /etc/nsswitch.conf
+    regexp: '^passwd:'
+    state: present
+    line: 'passwd:     files sss winbind'
+
+- name: modify /etc/nsswitch.conf to modify passwd line
+  lineinfile:
+    path: /etc/nsswitch.conf
+    regexp: '^group:'
+    state: present
+    line: 'group:     files sss winbind'
+
+- name: Restart smbd
+  service: name=smb state=restarted
+
+- name: Create folder for mounting over cifs
+  file: path=/mnt-krb5 state=directory owner=root group=root mode='0777'
+
+- name: Add fstab entry
+  lineinfile:
+    path: /etc/fstab
+    line: '//{{ inventory_hostname }}/test /mnt-krb5 	cifs sec=krb5,multiuser,cifsacl,vers=2.1,noauto 0 0'
+    state: present
+
+

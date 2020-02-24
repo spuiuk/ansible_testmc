@@ -1,0 +1,2 @@
+---
+WINDOWS_AD_NAME: "{{ windows_ad_name|upper }}"
