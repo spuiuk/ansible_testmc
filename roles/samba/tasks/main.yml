@@ -37,3 +37,7 @@
     owner: root
     group: root
     mode: 0644
+
+- name: Restart smbd
+  service: name=smb state=restarted enabled=yes
+
